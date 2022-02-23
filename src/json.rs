@@ -1,3 +1,4 @@
+use anyhow::{Context as _, Result};
 use serde::{Deserialize, Serialize};
 
 // https://github.com/llvm/llvm-project/blob/c0db8d50ca3ceb1301b2ade2fb86c591a5b64e5c/llvm/tools/llvm-cov/CoverageExporterJson.cpp#L13-L47
@@ -23,6 +24,21 @@ impl LlvmCovJsonExport {
                 }
             }
         }
+    }
+
+    /// Gets the minimal lines coverage of all files.
+    #[allow(unreachable_pub, dead_code)]
+    pub fn get_lines_percent(&self) -> Result<f64> {
+        let mut count = 0_f64;
+        let mut covered = 0_f64;
+        for data in &self.data {
+            let totals = &data.totals.as_object().context("totals is not an object")?;
+            let lines = &totals["lines"].as_object().context("no lines")?;
+            count += lines["count"].as_f64().context("no count")?;
+            covered += lines["covered"].as_f64().context("no covered")?;
+        }
+
+        Ok(covered * 100_f64 / count)
     }
 }
 
